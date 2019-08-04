@@ -4,6 +4,6 @@ workflow "Run Tests" {
 }
 
 action "Run Gradle tests" {
-  uses = "docker://gradle"
+  uses = "docker://gradle:jdk12"
   args = "gradle test"
 }

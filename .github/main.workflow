@@ -1,9 +1,9 @@
 workflow "Run Tests" {
-  on = "push"
   resolves = ["Run Gradle tests"]
+  on = "push"
 }
 
 action "Run Gradle tests" {
   uses = "docker://gradle"
-  args = "test"
+  args = "gradle test"
 }

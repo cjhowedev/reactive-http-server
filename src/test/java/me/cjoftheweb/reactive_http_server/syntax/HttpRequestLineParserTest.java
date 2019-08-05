@@ -61,6 +61,20 @@ class HttpRequestLineParserTest {
   }
 
   @Test
+  void testEmptyHttpMethod() {
+    var httpRequestLineParser = new HttpRequestLineParser();
+    var byteBuffer = ByteBuffer.wrap(" / HTTP/1.1\r\n".getBytes());
+
+    var ex = assertThrows(ParseException.class, () -> httpRequestLineParser.offer(byteBuffer));
+    assertEquals(0, ex.getOffset());
+
+    assertInvalidParser(httpRequestLineParser);
+
+    assertTrue(byteBuffer.hasRemaining());
+    assertFalse(httpRequestLineParser.isDone());
+  }
+
+  @Test
   void testShortInvalidHttpMethod() {
     var httpRequestLineParser = new HttpRequestLineParser();
     var byteBuffer = ByteBuffer.wrap("FAIL / HTTP/1.1\r\n".getBytes());
@@ -114,6 +128,20 @@ class HttpRequestLineParserTest {
   }
 
   @Test
+  void testEmptyHttpVersion() {
+    var httpRequestLineParser = new HttpRequestLineParser();
+    var byteBuffer = ByteBuffer.wrap("GET / \r\n".getBytes());
+
+    var ex = assertThrows(ParseException.class, () -> httpRequestLineParser.offer(byteBuffer));
+    assertEquals(6, ex.getOffset());
+
+    assertInvalidParser(httpRequestLineParser);
+
+    assertTrue(byteBuffer.hasRemaining());
+    assertFalse(httpRequestLineParser.isDone());
+  }
+
+  @Test
   void testShortInvalidHttpVersion() {
     var httpRequestLineParser = new HttpRequestLineParser();
     var byteBuffer = ByteBuffer.wrap("GET / HTTP/1.2\r\n".getBytes());
@@ -145,6 +173,22 @@ class HttpRequestLineParserTest {
 
     // ensure it didn't parse past the longest possible HTTP version
     assertEquals(HttpVersion.maxLength + 7, byteBuffer.position());
+  }
+
+  @Test
+  void testEmptyRequestTarget() {
+    var maxRequestTargetLength = 8000;
+    var httpRequestLineParser = new HttpRequestLineParser(maxRequestTargetLength);
+
+    var byteBuffer = ByteBuffer.wrap("GET  HTTP/1.1\r\n".getBytes());
+
+    var ex = assertThrows(ParseException.class, () -> httpRequestLineParser.offer(byteBuffer));
+    assertEquals(4, ex.getOffset());
+
+    assertInvalidParser(httpRequestLineParser);
+
+    assertTrue(byteBuffer.hasRemaining());
+    assertFalse(httpRequestLineParser.isDone());
   }
 
   @Test

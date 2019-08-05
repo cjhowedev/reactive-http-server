@@ -71,6 +71,10 @@ class HttpRequestLineParser implements Parser {
           switch (state) {
             case PARSING_METHOD:
               final String httpMethod = byteArrayOutputStream.toString();
+              if (httpMethod.isEmpty()) {
+                throwParseException("Empty method");
+              }
+
               method =
                   HttpMethod.fromMethodString(httpMethod)
                       .orElseThrow(
@@ -81,6 +85,9 @@ class HttpRequestLineParser implements Parser {
               break;
             case PARSING_REQUEST_TARGET:
               requestTarget = byteArrayOutputStream.toString();
+              if (requestTarget.isEmpty()) {
+                throwParseException("Empty request target");
+              }
               break;
             default:
               throwParseException("Unexpected space");
@@ -93,6 +100,10 @@ class HttpRequestLineParser implements Parser {
             throwParseException("Unexpected carriage return");
           } else {
             final String httpVersion = byteArrayOutputStream.toString();
+            if (httpVersion.isEmpty()) {
+              throwParseException("Empty version");
+            }
+
             version =
                 HttpVersion.fromVersionString(httpVersion)
                     .orElseThrow(

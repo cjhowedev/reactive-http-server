@@ -1,9 +1,15 @@
-workflow "Run Tests" {
-  resolves = ["Run Gradle tests"]
+workflow "Continuous integration" {
+  resolves = ["Unit tests", "Code coverage"]
   on = "push"
 }
 
-action "Run Gradle tests" {
+action "Unit tests" {
   uses = "docker://gradle:jdk12"
   args = "gradle test"
 }
+
+action "Code coverage" {
+  uses = "docker://gradle:jdk12"
+  args = "gradle jacocoTestCoverageVerification"
+}
+

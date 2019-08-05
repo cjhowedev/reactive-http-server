@@ -16,7 +16,7 @@
 
 package me.cjoftheweb.reactive_http_server.syntax;
 
-enum RequestLineParserState {
+enum HttpRequestLineParserState {
   PARSING_METHOD("while parsing the HTTP method"),
   PARSING_REQUEST_TARGET("while parsing the HTTP request target"),
   PARSING_VERSION("while parsing the HTTP version"),
@@ -26,11 +26,11 @@ enum RequestLineParserState {
 
   private final String friendlyStatusReport;
 
-  RequestLineParserState(String friendlyStatusReport) {
+  HttpRequestLineParserState(String friendlyStatusReport) {
     this.friendlyStatusReport = friendlyStatusReport;
   }
 
-  RequestLineParserState next() {
+  HttpRequestLineParserState next() {
     switch (this) {
       case PARSING_METHOD:
         return PARSING_REQUEST_TARGET;
@@ -45,7 +45,7 @@ enum RequestLineParserState {
     }
   }
 
-  String friendlyStatusReport() {
+  String getFriendlyStatusReport() {
     return this.friendlyStatusReport;
   }
 }

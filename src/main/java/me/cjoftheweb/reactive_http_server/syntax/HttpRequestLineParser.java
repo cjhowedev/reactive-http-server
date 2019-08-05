@@ -29,7 +29,7 @@ class HttpRequestLineParser implements Parser {
   private HttpMethod method = null;
   private String requestTarget = null;
   private HttpVersion version = null;
-  private RequestLineParserState state = RequestLineParserState.PARSING_METHOD;
+  private HttpRequestLineParserState state = HttpRequestLineParserState.PARSING_METHOD;
 
   HttpRequestLineParser() {
     this.maxRequestTargetLength = 0;
@@ -40,14 +40,15 @@ class HttpRequestLineParser implements Parser {
   }
 
   private void ensureValid() {
-    if (state == RequestLineParserState.ERROR) {
+    if (state == HttpRequestLineParserState.ERROR) {
       throw new InvalidParserException(HttpRequestLineParser.class);
     }
   }
 
   private void throwParseException(final String message) throws ParseException {
-    state = RequestLineParserState.ERROR;
-    throw new ParseException(String.format("%s %s", message, state.friendlyStatusReport()), offset);
+    state = HttpRequestLineParserState.ERROR;
+    throw new ParseException(
+        String.format("%s %s", message, state.getFriendlyStatusReport()), offset);
   }
 
   @Override
@@ -56,7 +57,7 @@ class HttpRequestLineParser implements Parser {
     ensureValid();
 
     while (buffer.hasRemaining()) {
-      if (state == RequestLineParserState.DONE) {
+      if (state == HttpRequestLineParserState.DONE) {
         return;
       }
 
@@ -71,7 +72,7 @@ class HttpRequestLineParser implements Parser {
                   HttpMethod.fromMethodString(httpMethod)
                       .orElseThrow(
                           () -> {
-                            state = RequestLineParserState.ERROR;
+                            state = HttpRequestLineParserState.ERROR;
                             return new UnsupportedHttpMethod(httpMethod);
                           });
               break;
@@ -85,7 +86,7 @@ class HttpRequestLineParser implements Parser {
           state = state.next();
           break;
         case '\r':
-          if (state != RequestLineParserState.PARSING_VERSION) {
+          if (state != HttpRequestLineParserState.PARSING_VERSION) {
             throwParseException("Unexpected carriage return");
           } else {
             final String httpVersion = byteArrayOutputStream.toString();
@@ -93,14 +94,14 @@ class HttpRequestLineParser implements Parser {
                 HttpVersion.fromVersionString(httpVersion)
                     .orElseThrow(
                         () -> {
-                          state = RequestLineParserState.ERROR;
+                          state = HttpRequestLineParserState.ERROR;
                           return new UnsupportedHttpVersion(httpVersion);
                         });
             state = state.next();
           }
           break;
         case '\n':
-          if (state != RequestLineParserState.AWAITING_LINE_FEED) {
+          if (state != HttpRequestLineParserState.AWAITING_LINE_FEED) {
             throwParseException("Unexpected line feed");
           } else {
             state = state.next();
@@ -112,7 +113,7 @@ class HttpRequestLineParser implements Parser {
               byteArrayOutputStream.write(nextByte);
               if (byteArrayOutputStream.size() > HttpMethod.maxLength) {
                 final String unsupportedMethod = byteArrayOutputStream.toString();
-                state = RequestLineParserState.ERROR;
+                state = HttpRequestLineParserState.ERROR;
                 throw new UnsupportedHttpMethod(unsupportedMethod);
               }
               break;
@@ -120,7 +121,7 @@ class HttpRequestLineParser implements Parser {
               byteArrayOutputStream.write(nextByte);
               if (maxRequestTargetLength > 0
                   && byteArrayOutputStream.size() > maxRequestTargetLength) {
-                state = RequestLineParserState.ERROR;
+                state = HttpRequestLineParserState.ERROR;
                 throw new RequestTargetTooLong(maxRequestTargetLength);
               }
               break;
@@ -128,7 +129,7 @@ class HttpRequestLineParser implements Parser {
               byteArrayOutputStream.write(nextByte);
               if (byteArrayOutputStream.size() > HttpVersion.maxLength) {
                 final String unsupportedVersion = byteArrayOutputStream.toString();
-                state = RequestLineParserState.ERROR;
+                state = HttpRequestLineParserState.ERROR;
                 throw new UnsupportedHttpVersion(unsupportedVersion);
               }
               break;
@@ -143,17 +144,17 @@ class HttpRequestLineParser implements Parser {
 
   @Override
   public boolean isValid() {
-    return state != RequestLineParserState.ERROR;
+    return state != HttpRequestLineParserState.ERROR;
   }
 
   @Override
   public boolean isDone() {
-    return state == RequestLineParserState.DONE;
+    return state == HttpRequestLineParserState.DONE;
   }
 
   @Override
   public void reset() {
-    state = RequestLineParserState.PARSING_METHOD;
+    state = HttpRequestLineParserState.PARSING_METHOD;
     byteArrayOutputStream.reset();
     method = null;
     requestTarget = null;

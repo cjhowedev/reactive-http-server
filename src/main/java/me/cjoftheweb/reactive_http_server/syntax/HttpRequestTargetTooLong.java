@@ -16,10 +16,10 @@
 
 package me.cjoftheweb.reactive_http_server.syntax;
 
-public class RequestTargetTooLong extends Exception {
+public class HttpRequestTargetTooLong extends Exception {
   private final int maxRequestTargetLength;
 
-  RequestTargetTooLong(final int maxRequestTargetLength) {
+  HttpRequestTargetTooLong(final int maxRequestTargetLength) {
     super(
         String.format(
             "Request target value was longer than maximum length of %d", maxRequestTargetLength));

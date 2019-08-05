@@ -18,16 +18,15 @@ package me.cjoftheweb.reactive_http_server.syntax;
 
 import org.junit.jupiter.api.Test;
 
-import static me.cjoftheweb.reactive_http_server.syntax.HttpRequestLineParserState.*;
+import static me.cjoftheweb.reactive_http_server.syntax.HttpHeaderParserState.*;
 import static me.cjoftheweb.reactive_http_server.syntax.TestHelpers.assertContainsInsensitive;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class HttpRequestLineParserStateTest {
+class HttpHeaderParserStateTest {
   @Test
   void testNext() {
-    assertEquals(PARSING_METHOD.next(), PARSING_REQUEST_TARGET);
-    assertEquals(PARSING_REQUEST_TARGET.next(), PARSING_VERSION);
-    assertEquals(PARSING_VERSION.next(), AWAITING_LINE_FEED);
+    assertEquals(PARSING_NAME.next(), PARSING_VALUE);
+    assertEquals(PARSING_VALUE.next(), AWAITING_LINE_FEED);
     assertEquals(AWAITING_LINE_FEED.next(), DONE);
     assertEquals(DONE.next(), ERROR);
     assertEquals(ERROR.next(), ERROR);
@@ -35,9 +34,8 @@ class HttpRequestLineParserStateTest {
 
   @Test
   void testFriendlyStatusReport() {
-    assertContainsInsensitive("method", PARSING_METHOD.getFriendlyStatusReport());
-    assertContainsInsensitive("request target", PARSING_REQUEST_TARGET.getFriendlyStatusReport());
-    assertContainsInsensitive("version", PARSING_VERSION.getFriendlyStatusReport());
+    assertContainsInsensitive("header field name", PARSING_NAME.getFriendlyStatusReport());
+    assertContainsInsensitive("header field value", PARSING_VALUE.getFriendlyStatusReport());
     assertContainsInsensitive("carriage return", AWAITING_LINE_FEED.getFriendlyStatusReport());
     assertContainsInsensitive("line feed", DONE.getFriendlyStatusReport());
     assertContainsInsensitive("error", ERROR.getFriendlyStatusReport());

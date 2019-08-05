@@ -17,8 +17,8 @@
 package me.cjoftheweb.reactive_http_server.syntax;
 
 enum HttpHeaderParserState {
-  PARSING_KEY("while parsing a header key"),
-  PARSING_VALUE("while parsing a header value"),
+  PARSING_NAME("while parsing a header field name"),
+  PARSING_VALUE("while parsing a header field value"),
   AWAITING_LINE_FEED("after parsing the first carriage return"),
   DONE("after parsing the final line feed"),
   ERROR("after an error occured");
@@ -31,7 +31,7 @@ enum HttpHeaderParserState {
 
   HttpHeaderParserState next() {
     switch (this) {
-      case PARSING_KEY:
+      case PARSING_NAME:
         return PARSING_VALUE;
       case PARSING_VALUE:
         return AWAITING_LINE_FEED;

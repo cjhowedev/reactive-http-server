@@ -22,24 +22,127 @@ import java.nio.ByteBuffer;
 import static me.cjoftheweb.reactive_http_server.syntax.HttpHeaderParserState.*;
 
 class HttpHeaderParser implements Parser {
-  private final int maxHeaderKeySize;
+  private final int maxHeaderNameSize;
   private final int maxHeaderValueSize;
   private final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(256);
-  private HttpHeaderParserState state = PARSING_KEY;
+  private int offset = 0;
+  private HttpHeaderParserState state = PARSING_NAME;
   private String key = null;
   private String value = null;
 
-  public HttpHeaderParser(final int maxHeaderKeySize, final int maxHeaderValueSize) {
-    this.maxHeaderKeySize = maxHeaderKeySize;
+  HttpHeaderParser() {
+    this.maxHeaderNameSize = 0;
+    this.maxHeaderValueSize = 0;
+  }
+
+  HttpHeaderParser(final int maxHeaderNameSize, final int maxHeaderValueSize) {
+    this.maxHeaderNameSize = maxHeaderNameSize;
     this.maxHeaderValueSize = maxHeaderValueSize;
   }
 
+  static String trimTrailingSpace(final String string) {
+    for (var i = string.length() - 1; i >= 0; i--) {
+      char c = string.charAt(i);
+      if (c != ' ' && c != '\t') {
+        return string.substring(0, i + 1);
+      }
+    }
+    return "";
+  }
+
+  private void ensureValid() {
+    if (state == ERROR) {
+      throw new InvalidParserException(HttpHeaderParser.class);
+    }
+  }
+
+  private void throwParseException(final String message) throws ParseException {
+    state = ERROR;
+    throw new ParseException(
+        String.format("%s %s", message, state.getFriendlyStatusReport()), offset);
+  }
+
   @Override
-  public void offer(ByteBuffer buffer) {}
+  public void offer(ByteBuffer buffer)
+      throws ParseException, HttpHeaderNameTooLong, HttpHeaderValueTooLong {
+    ensureValid();
+
+    while (buffer.hasRemaining()) {
+      if (state == DONE) {
+        return;
+      }
+
+      byte nextByte = buffer.get();
+
+      switch (nextByte) {
+        case ' ':
+        case '\t':
+          if (state == PARSING_VALUE) {
+            if (byteArrayOutputStream.size() > 0) {
+              byteArrayOutputStream.write(nextByte);
+            }
+          } else {
+            throwParseException(String.format("Unexpected %s", nextByte == ' ' ? "space" : "tab"));
+          }
+          break;
+        case ':':
+          if (state == PARSING_NAME) {
+            if (byteArrayOutputStream.size() <= 0) {
+              throwParseException("Empty header field name");
+            }
+
+            key = byteArrayOutputStream.toString();
+            byteArrayOutputStream.reset();
+            state = state.next();
+          } else {
+            throwParseException("Unexpected semicolon");
+          }
+          break;
+        case '\r':
+          if (state == PARSING_VALUE) {
+            if (byteArrayOutputStream.size() <= 0) {
+              throwParseException("Empty header field value");
+            }
+
+            value = trimTrailingSpace(byteArrayOutputStream.toString());
+            byteArrayOutputStream.reset();
+            state = state.next();
+          } else {
+            throwParseException("Unexpected carriage return");
+          }
+          break;
+        case '\n':
+          if (state == AWAITING_LINE_FEED) {
+            state = state.next();
+          } else {
+            throwParseException("Unexpected line feed");
+          }
+          break;
+        default:
+          byteArrayOutputStream.write(nextByte);
+          switch (state) {
+            case PARSING_NAME:
+              if (maxHeaderNameSize > 0 && byteArrayOutputStream.size() > maxHeaderNameSize) {
+                state = ERROR;
+                throw new HttpHeaderNameTooLong(maxHeaderNameSize);
+              }
+              break;
+            case PARSING_VALUE:
+              if (maxHeaderValueSize > 0 && byteArrayOutputStream.size() > maxHeaderValueSize) {
+                state = ERROR;
+                throw new HttpHeaderValueTooLong(maxHeaderValueSize);
+              }
+              break;
+          }
+      }
+
+      offset++;
+    }
+  }
 
   @Override
   public boolean isValid() {
-    return state == ERROR;
+    return state != ERROR;
   }
 
   @Override
@@ -49,17 +152,19 @@ class HttpHeaderParser implements Parser {
 
   @Override
   public void reset() {
-    state = PARSING_KEY;
+    state = PARSING_NAME;
     byteArrayOutputStream.reset();
     key = null;
     value = null;
   }
 
   public String getKey() {
+    ensureValid();
     return key;
   }
 
   public String getValue() {
+    ensureValid();
     return value;
   }
 }

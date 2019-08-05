@@ -9,7 +9,7 @@ well.
 ### To-Do
 
 - [x] Request line parser
-- [ ] Header parser
+- [x] Header parser (#3)
 - [ ] Response line encoder
 - [ ] Header encoder
 - [ ] Nio server abstraction

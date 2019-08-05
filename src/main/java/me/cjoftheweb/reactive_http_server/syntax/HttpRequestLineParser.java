@@ -55,7 +55,8 @@ class HttpRequestLineParser implements Parser {
 
   @Override
   public void offer(ByteBuffer buffer)
-      throws ParseException, UnsupportedHttpVersion, UnsupportedHttpMethod, RequestTargetTooLong {
+      throws ParseException, UnsupportedHttpVersion, UnsupportedHttpMethod,
+          HttpRequestTargetTooLong {
     ensureValid();
 
     while (buffer.hasRemaining()) {
@@ -124,7 +125,7 @@ class HttpRequestLineParser implements Parser {
               if (maxRequestTargetLength > 0
                   && byteArrayOutputStream.size() > maxRequestTargetLength) {
                 state = ERROR;
-                throw new RequestTargetTooLong(maxRequestTargetLength);
+                throw new HttpRequestTargetTooLong(maxRequestTargetLength);
               }
               break;
             case PARSING_VERSION:

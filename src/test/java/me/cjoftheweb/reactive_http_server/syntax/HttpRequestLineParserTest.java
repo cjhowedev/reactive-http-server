@@ -161,7 +161,7 @@ class HttpRequestLineParserTest {
         ByteBuffer.wrap(String.format("GET %s HTTP/1.1\r\n", requestTarget).getBytes());
 
     var ex =
-        assertThrows(RequestTargetTooLong.class, () -> httpRequestLineParser.offer(byteBuffer));
+        assertThrows(HttpRequestTargetTooLong.class, () -> httpRequestLineParser.offer(byteBuffer));
     assertEquals(maxRequestTargetLength, ex.getMaxRequestTargetLength());
 
     assertInvalidParser(httpRequestLineParser);
@@ -237,6 +237,7 @@ class HttpRequestLineParserTest {
     httpRequestLineParser.offer(byteBuffer);
 
     assertTrue(byteBuffer.hasRemaining());
+    assertEquals(4, byteBuffer.remaining());
     assertTrue(httpRequestLineParser.isDone());
     assertTrue(httpRequestLineParser.isValid());
 
